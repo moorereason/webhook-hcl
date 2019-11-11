@@ -67,6 +67,16 @@ server {
           }
 
           success {
+            status_code = 222
+            headers = { // response-headers
+                name = "${result.pid}",
+            }
+            content_type = "application/json"
+            body = "${result.CombinedOutput}" // include-command-output-in-response
+          }
+
+          error {
+            status_code = 555
             headers = { // response-headers
                 name = "${result.pid}",
             }
