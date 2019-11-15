@@ -29,7 +29,7 @@ type Hook struct {
 	PreExecConfig hcl.Body `hcl:",remain"`
 
 	// Request     *Request
-	Constraints *[]string
+	Constraints *Constraints
 	Task        Task
 	Response    *Response
 }
@@ -40,9 +40,36 @@ type Request struct {
 }
 
 type PreExecConfig struct {
-	Constraints    *[]string `hcl:"constraints"`
-	Task           Task      `hcl:"task,block"`
-	PostExecConfig hcl.Body  `hcl:",remain"`
+	Constraints    *Constraints `hcl:"constraints,block"`
+	Task           Task         `hcl:"task,block"`
+	PostExecConfig hcl.Body     `hcl:",remain"`
+}
+
+type Constraints struct {
+	All  *All  `hcl:"all,block"`
+	Any  *Any  `hcl:"any,block"`
+	None *None `hcl:"none,block"`
+}
+
+type All struct {
+	Expressions []string `hcl:"expressions"`
+	All         *All     `hcl:"all,block"`
+	Any         *Any     `hcl:"any,block"`
+	None        *None    `hcl:"none,block"`
+}
+
+type Any struct {
+	Expressions []string `hcl:"expressions"`
+	All         *All     `hcl:"all,block"`
+	Any         *Any     `hcl:"any,block"`
+	None        *None    `hcl:"none,block"`
+}
+
+type None struct {
+	Expressions []string `hcl:"expressions"`
+	All         *All     `hcl:"all,block"`
+	Any         *Any     `hcl:"any,block"`
+	None        *None    `hcl:"none,block"`
 }
 
 type Task struct {
@@ -76,11 +103,30 @@ type PostExecConfig struct {
 }
 
 type Response struct {
-	SuccessHttpResponseCode             *int               `hcl:"success_response_code"`
-	TriggerRuleMismatchHttpResponseCode *int               `hcl:"failed_constraints_response_code"`
-	ContentType                         *string            `hcl:"content_type"`
-	Body                                *string            `hcl:"body"`
-	Headers                             *map[string]string `hcl:"headers"`
+	ResponseSuccess     *ResponseSuccess     `hcl:"success,block"`
+	ResponseError       *ResponseError       `hcl:"error,block"`
+	ResponseUnsatisfied *ResponseUnsatisfied `hcl:"unsatisfied_constraints,block"`
+}
+
+type ResponseError struct {
+	StatusCode  *int               `hcl:"status_code"`
+	ContentType *string            `hcl:"content_type"`
+	Body        *string            `hcl:"body"`
+	Headers     *map[string]string `hcl:"headers"`
+}
+
+type ResponseSuccess struct {
+	StatusCode  *int               `hcl:"status_code"`
+	ContentType *string            `hcl:"content_type"`
+	Body        *string            `hcl:"body"`
+	Headers     *map[string]string `hcl:"headers"`
+}
+
+type ResponseUnsatisfied struct {
+	StatusCode  *int               `hcl:"status_code"`
+	ContentType *string            `hcl:"content_type"`
+	Body        *string            `hcl:"body"`
+	Headers     *map[string]string `hcl:"headers"`
 }
 
 func (s Server) Dump() {
@@ -109,7 +155,16 @@ func (s Server) Dump() {
 		}
 
 		if h.Constraints != nil {
-			fmt.Println("    Constraints:", *h.Constraints)
+			fmt.Println("    Constraints:")
+			if h.Constraints.All != nil {
+				fmt.Println("      All:", *h.Constraints.All)
+			}
+			if h.Constraints.Any != nil {
+				fmt.Println("      Any:", *h.Constraints.Any)
+			}
+			if h.Constraints.None != nil {
+				fmt.Println("      None:", *h.Constraints.None)
+			}
 		}
 
 		fmt.Println("    Task:")
@@ -129,20 +184,50 @@ func (s Server) Dump() {
 
 		if h.Response != nil {
 			fmt.Println("    Response:")
-			if h.Response.SuccessHttpResponseCode != nil {
-				fmt.Println("      SuccessHttpResponseCode:", *h.Response.SuccessHttpResponseCode)
+			if h.Response.ResponseSuccess != nil {
+				fmt.Println("      Success:")
+				if h.Response.ResponseSuccess.StatusCode != nil {
+					fmt.Println("        StatusCode:", *h.Response.ResponseSuccess.StatusCode)
+				}
+				if h.Response.ResponseSuccess.ContentType != nil {
+					fmt.Println("        ContentType:", *h.Response.ResponseSuccess.ContentType)
+				}
+				if h.Response.ResponseSuccess.Body != nil {
+					fmt.Println("        Body:", *h.Response.ResponseSuccess.Body)
+				}
+				if h.Response.ResponseSuccess.Headers != nil {
+					fmt.Println("        Headers:", *h.Response.ResponseSuccess.Headers)
+				}
 			}
-			if h.Response.TriggerRuleMismatchHttpResponseCode != nil {
-				fmt.Println("      TriggerRuleMismatchHttpResponseCode:", *h.Response.TriggerRuleMismatchHttpResponseCode)
+			if h.Response.ResponseError != nil {
+				fmt.Println("      Error:")
+				if h.Response.ResponseError.StatusCode != nil {
+					fmt.Println("        StatusCode:", *h.Response.ResponseError.StatusCode)
+				}
+				if h.Response.ResponseError.ContentType != nil {
+					fmt.Println("        ContentType:", *h.Response.ResponseError.ContentType)
+				}
+				if h.Response.ResponseError.Body != nil {
+					fmt.Println("        Body:", *h.Response.ResponseError.Body)
+				}
+				if h.Response.ResponseError.Headers != nil {
+					fmt.Println("        Headers:", *h.Response.ResponseError.Headers)
+				}
 			}
-			if h.Response.ContentType != nil {
-				fmt.Println("      ContentType:", *h.Response.ContentType)
-			}
-			if h.Response.Body != nil {
-				fmt.Println("      Body:", *h.Response.Body)
-			}
-			if h.Response.Headers != nil {
-				fmt.Println("      Headers:", *h.Response.Headers)
+			if h.Response.ResponseUnsatisfied != nil {
+				fmt.Println("      Unsatisfied:")
+				if h.Response.ResponseUnsatisfied.StatusCode != nil {
+					fmt.Println("        StatusCode:", *h.Response.ResponseUnsatisfied.StatusCode)
+				}
+				if h.Response.ResponseUnsatisfied.ContentType != nil {
+					fmt.Println("        ContentType:", *h.Response.ResponseUnsatisfied.ContentType)
+				}
+				if h.Response.ResponseUnsatisfied.Body != nil {
+					fmt.Println("        Body:", *h.Response.ResponseUnsatisfied.Body)
+				}
+				if h.Response.ResponseUnsatisfied.Headers != nil {
+					fmt.Println("        Headers:", *h.Response.ResponseUnsatisfied.Headers)
+				}
 			}
 		}
 		fmt.Println("")

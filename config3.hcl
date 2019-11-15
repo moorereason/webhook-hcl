@@ -4,14 +4,25 @@ server {
     secure = false
 
     hook "PREFIX/webhook" {
-        constraints = [ // trigger-rule
-            "${since(header("Date")) <= duration("10m")}",
-            "${match("^refs/[^/]+/master", payload("ref")) && sha256(payload, "secret") == header("X-Signature")}",
-        ]
+        constraints { // trigger-rule
+          all {
+            expressions = [
+              "${since(header("Date")) <= duration("10m")}",
+              "${match("^refs/[^/]+/master", payload("ref")) && sha256(payload, "secret") == header("X-Signature")}",
+            ]
+            any {
+              expressions = [
+                "${since(header("Date")) <= duration("10m")}",
+                "${match("^refs/[^/]+/master", payload("ref")) && sha256(payload, "secret") == header("X-Signature")}",
+              ]
+            }
+          }
+        }
 
         task {
             // execute-command & pass-arguments-to-command
             cmd = [
+              // "/issue217/vol-key-${payload("newVolume") > payload("previousVolume") ? "up" : "down"}.sh",
               "/home/adnon/redeploy-go-webhook.sh",
               "${payload("a")}",
               "${payload("head_commit.id")}",
@@ -51,24 +62,27 @@ server {
         }
 
         response {
-          success_response_code = 200
-          failed_constraints_response_code = 401
-
-          content_type = "application/json"
-
-          headers = { // response-headers
-              // name = "${result.PID}",
-              name = "${result.pid}",
+          unsatisfied_constraints {
+            status_code = 444
           }
 
-          // Is this too complex for the average user?  Should this be a block?
-          //   body {
-          //     success = "${result.CombinedOutput}",
-          //     error   = "${result.error}",
-          //     failed  = "contraints not satisfied",
-          //   }
-          body = "${result.error ? result.CombinedOutput : "success"}" // simple response-message & include-command-output-in-response-on-error
-          // body = "${result.CombinedOutput}" // include-command-output-in-response
+          success {
+            status_code = 222
+            headers = { // response-headers
+                name = "${result.pid}",
+            }
+            content_type = "application/json"
+            body = "${result.CombinedOutput}" // include-command-output-in-response
+          }
+
+          error {
+            status_code = 555
+            headers = { // response-headers
+                name = "${result.pid}",
+            }
+            content_type = "application/json"
+            body = "${result.CombinedOutput}" // include-command-output-in-response
+          }
         }
     }
 }

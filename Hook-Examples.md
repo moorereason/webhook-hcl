@@ -5,10 +5,14 @@ This page is still work in progress. Feel free to contribute!
 ```hcl
 server {
   hook "webhook" {
-    constraints = [
-      "${"refs/heads/master" == payload("ref")}",
-      "${sha256(payload, "mysecret") == header("X-Signature")}",
-    ]
+    constraints {
+      all {
+        expressions = [
+          "${"refs/heads/master" == payload("ref")}",
+          "${sha256(payload, "mysecret") == header("X-Signature")}",
+        ]
+      }
+    }
     task {
       workdir = "/home/adnan/go"
 
@@ -30,9 +34,13 @@ Bitbucket does not pass any secrets back to the webhook.  [Per their documentati
 ```hcl
 server {
   hook "webhook" {
-    constraints = [
-      "${request.RemoteAddr.WithinCIDR("104.192.143.0/24")}",
-    ]
+    constraints {
+      all {
+        expressions = [
+          "${request.RemoteAddr.WithinCIDR("104.192.143.0/24")}",
+        ]
+      }
+    }
     task {
       workdir = "/home/adnan/go"
 
@@ -54,9 +62,13 @@ Values in the request body can be accessed in the command or to the match rule b
 ```hcl
 server {
   hook "redeploy-webhook" {
-    constraints = [
-      "${header("X-Gitlab-Token") == "<YOUR-GENERATED-TOKEN>"}",
-    ]
+    constraints {
+      all {
+        expressions = [
+          "${header("X-Gitlab-Token") == "<YOUR-GENERATED-TOKEN>"}",
+        ]
+      }
+    }
     task {
       workdir = "/home/adnan/go"
 
@@ -74,10 +86,14 @@ server {
 ```hcl
 server {
   hook "webhook" {
-    constraints = [
-      "${"refs/heads/master" == payload("ref")}",
-      "${sha256(payload, "mysecret") == header("X-Gogs-Signature")}",
-    ]
+    constraints {
+      all {
+        expressions = [
+          "${"refs/heads/master" == payload("ref")}",
+          "${sha256(payload, "mysecret") == header("X-Gogs-Signature")}",
+        ]
+      }
+    }
     task {
       workdir = "/home/adnan/go"
 
@@ -97,10 +113,14 @@ server {
 ```hcl
 server {
   hook "webhook" {
-    constraints = [
-      "${"refs/heads/master" == payload("ref")}",
-      "${"mysecret" == payload("secret")}",
-    ]
+    constraints {
+      all {
+        expressions = [
+          "${"refs/heads/master" == payload("ref")}",
+          "${"mysecret" == payload("secret")}",
+        ]
+      }
+    }
     task {
       workdir = "/home/adnan/go"
 
@@ -120,9 +140,13 @@ server {
 ```hcl
 server {
   hook "redeploy-webhook" {
-    constraints = [
-      "${payload("token") == "<YOUR-GENERATED-TOKEN>"}",
-    ]
+    constraints {
+      all {
+        expressions = [
+          "${payload("token") == "<YOUR-GENERATED-TOKEN>"}",
+        ]
+      }
+    }
     task {
       workdir = "/home/adnan/go"
 
@@ -132,7 +156,9 @@ server {
       ]
     }
     response {
-      body = "${result.error ? result.CombinedOutput : "Executing redeploy script"}"
+      success {
+        body = "Executing redeploy script"
+      }
     }
   }
 }
@@ -148,14 +174,20 @@ __Not recommended in production due to low security__
 ```hcl
 server {
   hook "simple-one" {
-    constraints = [
-      "${parameter("token") == "42"}",
-    ]
+    constraints {
+      all {
+        expressions = [
+          "${parameter("token") == "42"}",
+        ]
+      }
+    }
     task {
       cmd = ["/path/to/command.sh"]
     }
     response {
-      body = "${result.error ? result.CombinedOutput : "Executing simple webhook.."}"
+      success {
+        body = "Executing simple webhook..."
+      }
     }
   }
 }
@@ -185,7 +217,9 @@ server {
       }
     }
     response {
-      body = "${result.CombinedOutput}"
+      success {
+        body = "${result.CombinedOutput}"
+      }
     }
   }
 }
@@ -225,10 +259,14 @@ In order to leverage the Signing Key for addtional authentication/security you m
 ```hcl
 server {
   hook "redeploy-webhook" {
-    constraints = [
-      "${since(header("Date")) <= duration("300s")}",
-      "${sha1(payload, "Scalr-provided signing key") == header("X-Signature")}",
-    ]
+    constraints {
+      all {
+        expressions = [
+          "${since(header("Date")) <= duration("300s")}",
+          "${sha1(payload, "Scalr-provided signing key") == header("X-Signature")}",
+        ]
+      }
+    }
     task {
       workdir = "/home/adnan/go"
 
@@ -240,7 +278,9 @@ server {
       }
     }
     response {
-      body = "${result.CombinedOutput}"
+      success {
+        body = "${result.CombinedOutput}"
+      }
     }
   }
 }
@@ -252,10 +292,14 @@ Travis sends webhooks as `payload=<JSON_STRING>`, so the payload needs to be par
 ```hcl
 server {
   hook "deploy" {
-    constraints = [
-      "${payload("payload.state") == "passed"}",
-      "${payload("payload.branch") == "master"}",
-    ]
+    constraints {
+      all {
+        expressions = [
+          "${payload("payload.state") == "passed"}",
+          "${payload("payload.branch") == "master"}",
+        ]
+      }
+    }
     request {
       json_parameters = ["payload"]
     }
