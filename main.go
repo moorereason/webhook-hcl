@@ -23,7 +23,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("%% TIME", time.Now().Sub(ct))
+	fmt.Println("%% TIME", time.Since(ct))
 
 	fmt.Printf("1 config: %#v\n", conf)
 	conf[0].Dump()
@@ -43,7 +43,7 @@ func main() {
 		log.Fatal(diags)
 	}
 	conf[0].Hooks = hb.Hooks
-	fmt.Println("%% TIME", time.Now().Sub(ct))
+	fmt.Println("%% TIME", time.Since(ct))
 	fmt.Printf("2 hooksConfig: %#v\n", conf)
 	conf[0].Dump()
 
@@ -76,7 +76,7 @@ func main() {
 	}
 	conf[0].Hooks[0].Constraints = pre.Constraints
 	conf[0].Hooks[0].Task = pre.Task
-	fmt.Println("%% TIME", time.Now().Sub(ct))
+	fmt.Println("%% TIME", time.Since(ct))
 	fmt.Printf("3 hookConfig: %#v\n", conf)
 	conf[0].Dump()
 
@@ -101,12 +101,12 @@ func main() {
 		log.Fatal(diags)
 	}
 	conf[0].Hooks[0].Response = post.Response
-	fmt.Println("%% TIME", time.Now().Sub(ct))
+	fmt.Println("%% TIME", time.Since(ct))
 	fmt.Printf("4 hookConfig: %#v\n", conf)
 	conf[0].Dump()
 
-	fmt.Println("%% TOTAL TIME", time.Now().Sub(t0))
-	fmt.Println("%% TOTAL TIME LESS LOAD CONFIG", time.Now().Sub(t1))
+	fmt.Println("%% TOTAL TIME", time.Since(t0))
+	fmt.Println("%% TOTAL TIME LESS LOAD CONFIG", time.Since(t1))
 }
 
 func loadConfigFile(path string) ([]config.Server, error) {

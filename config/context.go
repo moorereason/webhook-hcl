@@ -234,7 +234,7 @@ func sinceFunc() function.Function {
 				}
 			}
 
-			return cty.NumberIntVal(int64(time.Now().Sub(t))), err
+			return cty.NumberIntVal(int64(time.Since(t))), err
 		},
 	})
 }
