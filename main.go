@@ -59,7 +59,8 @@ func main() {
 		"ref": "refs/heads/master",
 	}
 	config.Headers = map[string]string{
-		"X-Signature": "f417af3a21bd70379b5796d5f013915e7029f62c580fb0f500f59a35a6f04c89",
+		"X-Signature":       "f417af3a21bd70379b5796d5f013915e7029f62c580fb0f500f59a35a6f04c89",
+		"X-Coral-Signature": "sha1=b17e04cbb22afa8ffbff8796fc1894ed27badd9e,sha256=f417af3a21bd70379b5796d5f013915e7029f62c580fb0f500f59a35a6f04c89",
 		//"Date":        "Fri, 20 Sep 2019 14:09:11 GMT",
 	}
 	config.Params = map[string]string{}

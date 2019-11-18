@@ -58,6 +58,10 @@ type All struct {
 	None        *None    `hcl:"none,block"`
 }
 
+func (a *All) String() string {
+	return fmt.Sprintf("All: {Expressions: %v, %v, %v, %v}", a.Expressions, a.All, a.Any, a.None)
+}
+
 type Any struct {
 	Expressions []string `hcl:"expressions"`
 	All         *All     `hcl:"all,block"`
@@ -65,11 +69,19 @@ type Any struct {
 	None        *None    `hcl:"none,block"`
 }
 
+func (a *Any) String() string {
+	return fmt.Sprintf("All: {Expressions: %v, %v, %v, %v}", a.Expressions, a.All, a.Any, a.None)
+}
+
 type None struct {
 	Expressions []string `hcl:"expressions"`
 	All         *All     `hcl:"all,block"`
 	Any         *Any     `hcl:"any,block"`
 	None        *None    `hcl:"none,block"`
+}
+
+func (n *None) String() string {
+	return fmt.Sprintf("None: {Expressions: %v, %v, %v, %v}", n.Expressions, n.All, n.Any, n.None)
 }
 
 type Task struct {
@@ -155,16 +167,7 @@ func (s Server) Dump() {
 		}
 
 		if h.Constraints != nil {
-			fmt.Println("    Constraints:")
-			if h.Constraints.All != nil {
-				fmt.Println("      All:", *h.Constraints.All)
-			}
-			if h.Constraints.Any != nil {
-				fmt.Println("      Any:", *h.Constraints.Any)
-			}
-			if h.Constraints.None != nil {
-				fmt.Println("      None:", *h.Constraints.None)
-			}
+			fmt.Println("    Constraints:", *h.Constraints)
 		}
 
 		fmt.Println("    Task:")

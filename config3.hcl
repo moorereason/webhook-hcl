@@ -12,8 +12,12 @@ server {
             ]
             any {
               expressions = [
-                "${since(header("Date")) <= duration("10m")}",
-                "${match("^refs/[^/]+/master", payload("ref")) && sha256(payload, "secret") == header("X-Signature")}",
+                // https://github.com/adnanh/webhook/pull/355
+                "${contains(header("X-Coral-Signature"), concat("sha1=", sha1(payload, "secret")))}",
+                "${contains(header("X-Coral-Signature"), concat("sha256=", sha256(payload, "secret")))}",
+
+                "${debug(concat("sha1=", sha1(payload, "secret")))}",
+                "${debug(concat("sha256=", sha256(payload, "secret")))}",
               ]
             }
           }

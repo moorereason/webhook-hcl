@@ -6,7 +6,9 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"log"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/hcl/v2"
@@ -27,6 +29,9 @@ var (
 func init() {
 	funcMap = map[string]function.Function{
 		"base64decode": base64decodeFunc(),
+		"concat":       concatFunc(),
+		"contains":     containsFunc(),
+		"debug":        debugFunc(),
 		"duration":     durationFunc(),
 		"format":       stdlib.FormatFunc,
 		"header":       headerFunc(),
@@ -196,6 +201,50 @@ func matchFunc() function.Function {
 	})
 }
 
+func concatFunc() function.Function {
+	return function.New(&function.Spec{
+		Params: []function.Parameter{
+			{
+				Name: "s1",
+				Type: cty.String,
+			},
+			{
+				Name: "s2",
+				Type: cty.String,
+			},
+		},
+		Type: function.StaticReturnType(cty.String),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			s1 := args[0].AsString()
+			s2 := args[1].AsString()
+
+			return cty.StringVal(s1 + s2), nil
+		},
+	})
+}
+
+func containsFunc() function.Function {
+	return function.New(&function.Spec{
+		Params: []function.Parameter{
+			{
+				Name: "s",
+				Type: cty.String,
+			},
+			{
+				Name: "substr",
+				Type: cty.String,
+			},
+		},
+		Type: function.StaticReturnType(cty.Bool),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			s := args[0].AsString()
+			substr := args[1].AsString()
+
+			return cty.BoolVal(strings.Contains(s, substr)), nil
+		},
+	})
+}
+
 func durationFunc() function.Function {
 	return function.New(&function.Spec{
 		Params: []function.Parameter{
@@ -257,6 +306,25 @@ func base64decodeFunc() function.Function {
 			}
 
 			return stdlib.BytesVal(data), err
+		},
+	})
+}
+
+func debugFunc() function.Function {
+	return function.New(&function.Spec{
+		Params: []function.Parameter{
+			{
+				Name: "v",
+				Type: cty.String,
+			},
+		},
+		Type: function.StaticReturnType(cty.Bool),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			v := args[0].AsString()
+
+			log.Print(v)
+
+			return cty.BoolVal(true), nil
 		},
 	})
 }
