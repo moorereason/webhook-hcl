@@ -2,6 +2,7 @@ server {
     ip = "0.0.0.0"
     port = 9000
     secure = false
+    http_methods = ["POST"]
 
     hook "PREFIX/webhook" {
         constraints { // trigger-rule
@@ -68,12 +69,16 @@ server {
         response {
           unsatisfied_constraints {
             status_code = 444
+            headers = { // response-headers
+                Strict-Transport-Security = "max-age=63072000; includeSubDomains",
+            }
           }
 
           success {
             status_code = 222
             headers = { // response-headers
                 name = "${result.pid}",
+                Strict-Transport-Security = "max-age=63072000; includeSubDomains",
             }
             content_type = "application/json"
             body = "${result.CombinedOutput}" // include-command-output-in-response
@@ -83,6 +88,7 @@ server {
             status_code = 555
             headers = { // response-headers
                 name = "${result.pid}",
+                Strict-Transport-Security = "max-age=63072000; includeSubDomains",
             }
             content_type = "application/json"
             body = "${result.CombinedOutput}" // include-command-output-in-response

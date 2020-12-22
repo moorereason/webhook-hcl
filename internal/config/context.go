@@ -19,11 +19,6 @@ import (
 
 var (
 	funcMap map[string]function.Function
-	// varMap map[string]cty.Value
-
-	Payload map[string]string
-	Headers map[string]string
-	Params  map[string]string
 )
 
 func init() {
@@ -34,24 +29,37 @@ func init() {
 		"debug":        debugFunc(),
 		"duration":     durationFunc(),
 		"format":       stdlib.FormatFunc,
-		"header":       headerFunc(),
 		"match":        matchFunc(),
-		"param":        paramFunc(),
-		"payload":      payloadFunc(),
 		"sha1":         sha1Func(),
 		"sha256":       sha256Func(),
 		"since":        sinceFunc(),
 	}
 }
 
-func NewContext() *hcl.EvalContext {
-	return &hcl.EvalContext{
-		Variables: map[string]cty.Value{},
-		Functions: funcMap,
+type Context struct {
+	EvalContext *hcl.EvalContext
+
+	Payload map[string]string
+	Headers map[string]string
+	Params  map[string]string
+}
+
+func NewContext() *Context {
+	c := &Context{
+		EvalContext: &hcl.EvalContext{
+			Variables: map[string]cty.Value{},
+			Functions: funcMap,
+		},
 	}
+
+	c.EvalContext.Functions["header"] = c.HeaderFunc()
+	c.EvalContext.Functions["payload"] = c.PayloadFunc()
+	c.EvalContext.Functions["param"] = c.ParamFunc()
+
+	return c
 }
 
-func payloadFunc() function.Function {
+func (c *Context) PayloadFunc() function.Function {
 	return function.New(&function.Spec{
 		Params: []function.Parameter{
 			{
@@ -62,7 +70,7 @@ func payloadFunc() function.Function {
 		Type: function.StaticReturnType(cty.String),
 		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
 			k := args[0].AsString()
-			if v, ok := Payload[k]; ok {
+			if v, ok := c.Payload[k]; ok {
 				return cty.StringVal(v), nil
 			}
 			return cty.StringVal(""), nil
@@ -70,7 +78,7 @@ func payloadFunc() function.Function {
 	})
 }
 
-func headerFunc() function.Function {
+func (c *Context) HeaderFunc() function.Function {
 	return function.New(&function.Spec{
 		Params: []function.Parameter{
 			{
@@ -81,7 +89,7 @@ func headerFunc() function.Function {
 		Type: function.StaticReturnType(cty.String),
 		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
 			k := args[0].AsString()
-			if v, ok := Headers[k]; ok {
+			if v, ok := c.Headers[k]; ok {
 				return cty.StringVal(v), nil
 			}
 			return cty.StringVal(""), nil
@@ -89,7 +97,7 @@ func headerFunc() function.Function {
 	})
 }
 
-func paramFunc() function.Function {
+func (c *Context) ParamFunc() function.Function {
 	return function.New(&function.Spec{
 		Params: []function.Parameter{
 			{
@@ -100,7 +108,7 @@ func paramFunc() function.Function {
 		Type: function.StaticReturnType(cty.String),
 		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
 			k := args[0].AsString()
-			if v, ok := Params[k]; ok {
+			if v, ok := c.Params[k]; ok {
 				return cty.StringVal(v), nil
 			}
 			return cty.StringVal(""), nil

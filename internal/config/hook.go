@@ -11,10 +11,11 @@ type C struct {
 }
 
 type Server struct {
-	IP       *string  `hcl:"ip"`
-	Port     *int     `hcl:"port"`
-	Secure   *bool    `hcl:"secure"`
-	RawHooks hcl.Body `hcl:",remain"` // See https://hcl.readthedocs.io/en/latest/go_decoding_gohcl.html#partial-decoding
+	IP          *string   `hcl:"ip"`
+	Port        *int      `hcl:"port"`
+	Secure      *bool     `hcl:"secure"`
+	HTTPMethods *[]string `hcl:"http_methods"`
+	RawHooks    hcl.Body  `hcl:",remain"` // See https://hcl.readthedocs.io/en/latest/go_decoding_gohcl.html#partial-decoding
 
 	Hooks []Hook
 }
