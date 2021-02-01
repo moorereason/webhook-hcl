@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclparse"
@@ -11,22 +13,27 @@ import (
 )
 
 func main() {
-	// t0 := time.Now()
-	//
-	// ct := time.Now()
+	if len(os.Args) == 1 {
+		fmt.Printf("Usage: %s\n FILE", os.Args[0])
+		os.Exit(1)
+	}
+
+	t0 := time.Now()
+
+	ct := time.Now()
 	/////
 	// Initialize server
 	/////
-	conf, err := loadConfigFile("config3.hcl")
+	conf, err := loadConfigFile(os.Args[1])
 	if err != nil {
 		log.Fatal(err)
 	}
-	// fmt.Println("%% Initialize Server\n%% TIME", time.Since(ct))
+	fmt.Println("%% Initialize Server\n%% TIME", time.Since(ct))
 
 	// fmt.Printf("1 config: %#v\n", conf)
 	// conf[0].Dump()
 
-	// t1 := time.Now()
+	t1 := time.Now()
 
 	/////
 	// Initialize hooks
@@ -34,14 +41,14 @@ func main() {
 
 	ctx := config.NewContext()
 
-	// ct = time.Now()
+	ct = time.Now()
 	var hb config.HooksConfig
 	diags := gohcl.DecodeBody(conf[0].RawHooks, ctx.EvalContext, &hb)
 	if diags.HasErrors() {
 		log.Fatal(diags)
 	}
 	conf[0].Hooks = hb.Hooks
-	// fmt.Println("%% Initialize Hooks\n%% TIME", time.Since(ct))
+	fmt.Println("%% Initialize Hooks\n%% TIME", time.Since(ct))
 	// fmt.Printf("2 hooksConfig: %#v\n", conf)
 	// conf[0].Dump()
 
@@ -67,7 +74,7 @@ func main() {
 	// Evaluate constraints and task block
 	/////
 
-	// ct = time.Now()
+	ct = time.Now()
 	var pre config.PreExecConfig
 	diags = gohcl.DecodeBody(conf[0].Hooks[0].PreExecConfig, ctx.EvalContext, &pre)
 	if diags.HasErrors() {
@@ -75,9 +82,18 @@ func main() {
 	}
 	conf[0].Hooks[0].Constraints = pre.Constraints
 	conf[0].Hooks[0].Task = pre.Task
-	// fmt.Println("%% Evaluate Constraints\n%% TIME", time.Since(ct))
+	fmt.Println("%% Evaluate Constraints\n%% TIME", time.Since(ct))
 	// fmt.Printf("3 hookConfig: %#v\n", conf)
-	// conf[0].Dump()
+	conf[0].Dump()
+
+	if conf[0].Hooks[0].Constraints != nil {
+		for _, v := range *conf[0].Hooks[0].Constraints {
+			if v == false {
+				fmt.Println("hook constraints not satisfied.")
+				return
+			}
+		}
+	}
 
 	/////
 	// Execute task, if necessary
@@ -93,19 +109,19 @@ func main() {
 	// Send Response
 	/////
 
-	// ct = time.Now()
+	ct = time.Now()
 	var post config.PostExecConfig
 	diags = gohcl.DecodeBody(pre.PostExecConfig, ctx.EvalContext, &post)
 	if diags.HasErrors() {
 		log.Fatal(diags)
 	}
 	conf[0].Hooks[0].Response = post.Response
-	// fmt.Println("%% Build Response\n%% TIME", time.Since(ct))
+	fmt.Println("%% Build Response\n%% TIME", time.Since(ct))
 	// fmt.Printf("4 hookConfig: %#v\n", conf)
 	// conf[0].Dump()
 
-	// fmt.Println("%% TOTAL TIME", time.Since(t0))
-	// fmt.Println("%% TOTAL TIME LESS LOAD CONFIG", time.Since(t1))
+	fmt.Println("%% TOTAL TIME", time.Since(t0))
+	fmt.Println("%% TOTAL TIME LESS LOAD CONFIG", time.Since(t1))
 }
 
 func loadConfigFile(path string) ([]config.Server, error) {
@@ -123,7 +139,7 @@ func loadConfigFile(path string) ([]config.Server, error) {
 
 	ctx := config.NewContext()
 
-	var c config.C
+	var c config.Config
 	diags = gohcl.DecodeBody(f.Body, ctx.EvalContext, &c)
 	if diags.HasErrors() {
 		return nil, diags

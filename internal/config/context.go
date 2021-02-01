@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"log"
 	"regexp"
 	"strings"
@@ -17,18 +18,32 @@ import (
 	"github.com/zclconf/go-cty/cty/function/stdlib"
 )
 
-var (
-	funcMap map[string]function.Function
-)
+var funcMap map[string]function.Function
 
 func init() {
 	funcMap = map[string]function.Function{
+		// stdlib functions
+		"and":    stdlib.AndFunc,
+		"eq":     stdlib.EqualFunc,
+		"format": stdlib.FormatFunc,
+		"ge":     stdlib.GreaterThanOrEqualToFunc,
+		"gt":     stdlib.GreaterThanFunc,
+		"join":   stdlib.JoinFunc,
+		"le":     stdlib.LessThanOrEqualToFunc,
+		"lt":     stdlib.LessThanFunc,
+		"ne":     stdlib.NotEqualFunc,
+		"not":    stdlib.NotFunc,
+		"or":     stdlib.OrFunc,
+		// "concat":   stdlib.ConcatFunc, // not for string concat
+		// "contains": stdlib.ContainsFunc, // not for strings
+
+		"all":          allFunc(),
+		"any":          anyFunc(),
 		"base64decode": base64decodeFunc(),
 		"concat":       concatFunc(),
 		"contains":     containsFunc(),
 		"debug":        debugFunc(),
 		"duration":     durationFunc(),
-		"format":       stdlib.FormatFunc,
 		"match":        matchFunc(),
 		"sha1":         sha1Func(),
 		"sha256":       sha256Func(),
@@ -55,6 +70,7 @@ func NewContext() *Context {
 	c.EvalContext.Functions["header"] = c.HeaderFunc()
 	c.EvalContext.Functions["payload"] = c.PayloadFunc()
 	c.EvalContext.Functions["param"] = c.ParamFunc()
+	// c.EvalContext.Functions["request"] = c.RequestFunc()
 
 	return c
 }
@@ -292,6 +308,56 @@ func sinceFunc() function.Function {
 			}
 
 			return cty.NumberIntVal(int64(time.Since(t))), err
+		},
+	})
+}
+
+func allFunc() function.Function {
+	return function.New(&function.Spec{
+		Params: []function.Parameter{},
+		VarParam: &function.Parameter{
+			Name:             "conditions",
+			Type:             cty.Bool,
+			AllowDynamicType: true,
+		},
+		Type: function.StaticReturnType(cty.Bool),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			if len(args) == 0 {
+				return cty.NilVal, fmt.Errorf("must pass at least one condition")
+			}
+
+			for _, v := range args {
+				if v.False() {
+					return cty.False, nil
+				}
+			}
+
+			return cty.True, nil
+		},
+	})
+}
+
+func anyFunc() function.Function {
+	return function.New(&function.Spec{
+		Params: []function.Parameter{},
+		VarParam: &function.Parameter{
+			Name:             "conditions",
+			Type:             cty.Bool,
+			AllowDynamicType: true,
+		},
+		Type: function.StaticReturnType(cty.Bool),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			if len(args) == 0 {
+				return cty.NilVal, fmt.Errorf("must pass at least one condition")
+			}
+
+			for _, v := range args {
+				if v.True() {
+					return cty.True, nil
+				}
+			}
+
+			return cty.False, nil
 		},
 	})
 }

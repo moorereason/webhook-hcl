@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 )
 
-type C struct {
+type Config struct {
 	Servers []Server `hcl:"server,block"`
 }
 
@@ -30,7 +30,7 @@ type Hook struct {
 	PreExecConfig hcl.Body `hcl:",remain"`
 
 	// Request     *Request
-	Constraints *Constraints
+	Constraints *[]bool
 	Task        Task
 	Response    *Response
 }
@@ -41,9 +41,9 @@ type Request struct {
 }
 
 type PreExecConfig struct {
-	Constraints    *Constraints `hcl:"constraints,block"`
-	Task           Task         `hcl:"task,block"`
-	PostExecConfig hcl.Body     `hcl:",remain"`
+	Constraints    *[]bool  `hcl:"constraints"`
+	Task           Task     `hcl:"task,block"`
+	PostExecConfig hcl.Body `hcl:",remain"`
 }
 
 type Constraints struct {
