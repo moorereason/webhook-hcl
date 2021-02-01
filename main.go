@@ -86,11 +86,11 @@ func main() {
 	// fmt.Printf("3 hookConfig: %#v\n", conf)
 	conf[0].Dump()
 
+	var satisfied bool
 	if conf[0].Hooks[0].Constraints != nil {
 		for _, v := range *conf[0].Hooks[0].Constraints {
 			if v == false {
-				fmt.Println("hook constraints not satisfied.")
-				return
+				satisfied = false
 			}
 		}
 	}
@@ -105,12 +105,18 @@ func main() {
 		"CombinedOutput": cty.StringVal(`{"error":12,"output":"connection refused"}`),
 	})
 
+	if !satisfied {
+		fmt.Println("hook constraints not satisfied.")
+	}
+
 	/////
 	// Send Response
 	/////
 
 	ct = time.Now()
 	var post config.PostExecConfig
+	// TODO: if hook constraints are unsatisfied, the $result will be nil, so we
+	// don't want to render the success or error blocks.
 	diags = gohcl.DecodeBody(pre.PostExecConfig, ctx.EvalContext, &post)
 	if diags.HasErrors() {
 		log.Fatal(diags)

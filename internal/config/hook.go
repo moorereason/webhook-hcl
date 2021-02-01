@@ -46,45 +46,6 @@ type PreExecConfig struct {
 	PostExecConfig hcl.Body `hcl:",remain"`
 }
 
-type Constraints struct {
-	All  *All  `hcl:"all,block"`
-	Any  *Any  `hcl:"any,block"`
-	None *None `hcl:"none,block"`
-}
-
-type All struct {
-	Expressions []string `hcl:"expressions"`
-	All         *All     `hcl:"all,block"`
-	Any         *Any     `hcl:"any,block"`
-	None        *None    `hcl:"none,block"`
-}
-
-func (a *All) String() string {
-	return fmt.Sprintf("All: {Expressions: %v, %v, %v, %v}", a.Expressions, a.All, a.Any, a.None)
-}
-
-type Any struct {
-	Expressions []string `hcl:"expressions"`
-	All         *All     `hcl:"all,block"`
-	Any         *Any     `hcl:"any,block"`
-	None        *None    `hcl:"none,block"`
-}
-
-func (a *Any) String() string {
-	return fmt.Sprintf("All: {Expressions: %v, %v, %v, %v}", a.Expressions, a.All, a.Any, a.None)
-}
-
-type None struct {
-	Expressions []string `hcl:"expressions"`
-	All         *All     `hcl:"all,block"`
-	Any         *Any     `hcl:"any,block"`
-	None        *None    `hcl:"none,block"`
-}
-
-func (n *None) String() string {
-	return fmt.Sprintf("None: {Expressions: %v, %v, %v, %v}", n.Expressions, n.All, n.Any, n.None)
-}
-
 type Task struct {
 	ExecuteCommand           []string           `hcl:"cmd"`
 	CommandWorkingDirectory  *string            `hcl:"workdir"`
