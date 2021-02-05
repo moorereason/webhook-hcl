@@ -4,10 +4,13 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"log"
+	"net"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -30,23 +33,30 @@ func init() {
 		"gt":     stdlib.GreaterThanFunc,
 		"join":   stdlib.JoinFunc,
 		"le":     stdlib.LessThanOrEqualToFunc,
+		"lower":  stdlib.LowerFunc,
 		"lt":     stdlib.LessThanFunc,
 		"ne":     stdlib.NotEqualFunc,
 		"not":    stdlib.NotFunc,
 		"or":     stdlib.OrFunc,
-		// "concat":   stdlib.ConcatFunc, // not for string concat
-		// "contains": stdlib.ContainsFunc, // not for strings
+		"upper":  stdlib.UpperFunc,
+		"find":   stdlib.RegexFunc,
+		"len":    stdlib.LengthFunc,
 
 		"all":          allFunc(),
 		"any":          anyFunc(),
 		"base64decode": base64decodeFunc(),
+		"base64encode": base64encodeFunc(),
+		"cidr":         cidrFunc(),
 		"concat":       concatFunc(),
 		"contains":     containsFunc(),
 		"debug":        debugFunc(),
 		"duration":     durationFunc(),
+		"getenv":       getenvFunc(),
 		"match":        matchFunc(),
+		"readfile":     readfileFunc(),
 		"sha1":         sha1Func(),
 		"sha256":       sha256Func(),
+		"sha512":       sha512Func(),
 		"since":        sinceFunc(),
 	}
 }
@@ -89,7 +99,7 @@ func (c *Context) PayloadFunc() function.Function {
 			if v, ok := c.Payload[k]; ok {
 				return cty.StringVal(v), nil
 			}
-			return cty.StringVal(""), nil
+			return cty.StringVal(""), fmt.Errorf("failed to find payload value: %s", k)
 		},
 	})
 }
@@ -104,7 +114,7 @@ func (c *Context) HeaderFunc() function.Function {
 		},
 		Type: function.StaticReturnType(cty.String),
 		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
-			k := args[0].AsString()
+			k := strings.ToLower(args[0].AsString())
 			if v, ok := c.Headers[k]; ok {
 				return cty.StringVal(v), nil
 			}
@@ -157,6 +167,7 @@ func sha1Func() function.Function {
 
 			expectedMAC := hex.EncodeToString(mac.Sum(nil))
 
+			// TODO: disabled for testing
 			// if !hmac.Equal([]byte(signature), []byte(expectedMAC)) {
 			//      return expectedMAC, &SignatureError{signature}
 			// }
@@ -190,6 +201,41 @@ func sha256Func() function.Function {
 
 			expectedMAC := hex.EncodeToString(mac.Sum(nil))
 
+			// TODO: disabled for testing
+			// if !hmac.Equal([]byte(signature), []byte(expectedMAC)) {
+			//      return expectedMAC, &SignatureError{signature}
+			// }
+			return cty.StringVal(expectedMAC), err
+		},
+	})
+}
+
+func sha512Func() function.Function {
+	return function.New(&function.Spec{
+		Params: []function.Parameter{
+			{
+				Name: "data",
+				Type: cty.String,
+			},
+			{
+				Name: "secret",
+				Type: cty.String,
+			},
+		},
+		Type: function.StaticReturnType(cty.String),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			data := args[0].AsString()
+			secret := args[1].AsString()
+
+			mac := hmac.New(sha512.New, []byte(secret))
+			_, err := mac.Write([]byte(data))
+			if err != nil {
+				return cty.StringVal(""), err
+			}
+
+			expectedMAC := hex.EncodeToString(mac.Sum(nil))
+
+			// TODO: disabled for testing
 			// if !hmac.Equal([]byte(signature), []byte(expectedMAC)) {
 			//      return expectedMAC, &SignatureError{signature}
 			// }
@@ -362,6 +408,7 @@ func anyFunc() function.Function {
 	})
 }
 
+// TODO: String vs Bytes
 func base64decodeFunc() function.Function {
 	return function.New(&function.Spec{
 		Params: []function.Parameter{
@@ -384,6 +431,49 @@ func base64decodeFunc() function.Function {
 	})
 }
 
+func base64encodeFunc() function.Function {
+	return function.New(&function.Spec{
+		Params: []function.Parameter{
+			{
+				Name: "s",
+				Type: cty.String,
+			},
+		},
+		Type: function.StaticReturnType(cty.String),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			b := args[0].AsString()
+			data := base64.StdEncoding.EncodeToString([]byte(b))
+			return cty.StringVal(data), nil
+		},
+	})
+}
+
+func cidrFunc() function.Function {
+	return function.New(&function.Spec{
+		Params: []function.Parameter{
+			{
+				Name: "cidr",
+				Type: cty.String,
+			},
+			{
+				Name: "ip",
+				Type: cty.String,
+			},
+		},
+		Type: function.StaticReturnType(cty.Bool),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			_, cidr, err := net.ParseCIDR(args[0].AsString())
+			if err != nil {
+				return cty.BoolVal(false), err
+			}
+
+			ip := net.ParseIP(args[1].AsString())
+
+			return cty.BoolVal(cidr.Contains(ip)), nil
+		},
+	})
+}
+
 func debugFunc() function.Function {
 	return function.New(&function.Spec{
 		Params: []function.Parameter{
@@ -399,6 +489,43 @@ func debugFunc() function.Function {
 			log.Print(v)
 
 			return cty.BoolVal(true), nil
+		},
+	})
+}
+
+func getenvFunc() function.Function {
+	return function.New(&function.Spec{
+		Params: []function.Parameter{
+			{
+				Name: "var",
+				Type: cty.String,
+			},
+		},
+		Type: function.StaticReturnType(cty.String),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			v := args[0].AsString()
+			return cty.StringVal(os.Getenv(v)), nil
+		},
+	})
+}
+
+func readfileFunc() function.Function {
+	return function.New(&function.Spec{
+		Params: []function.Parameter{
+			{
+				Name: "path",
+				Type: cty.String,
+			},
+		},
+		Type: function.StaticReturnType(cty.String),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			path := args[0].AsString()
+
+			b, err := os.ReadFile(path)
+			if err != nil {
+				return cty.BoolVal(false), err
+			}
+			return cty.StringVal(string(b)), nil
 		},
 	})
 }

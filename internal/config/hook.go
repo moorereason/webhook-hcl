@@ -7,15 +7,33 @@ import (
 )
 
 type Config struct {
-	Servers []Server `hcl:"server,block"`
+	Services []Service `hcl:"service,block"`
 }
 
-type Server struct {
+type Service struct {
+	Debug       *bool     `hcl:"debug"`
+	Verbose     *bool     `hcl:"verbose"`
 	IP          *string   `hcl:"ip"`
 	Port        *int      `hcl:"port"`
 	Secure      *bool     `hcl:"secure"`
+	User        *string   `hcl:"user"`
+	Group       *string   `hcl:"group"`
+	LogFile     *string   `hcl:"logfile"`
+	NoPanic     *bool     `hcl:"nopanic"`
+	PIDFile     *string   `hcl:"pidfile"`
 	HTTPMethods *[]string `hcl:"http_methods"`
-	RawHooks    hcl.Body  `hcl:",remain"` // See https://hcl.readthedocs.io/en/latest/go_decoding_gohcl.html#partial-decoding
+
+	EnableXRequestID *bool `hcl:"enable_xrequestid"`
+	XRequestIDLimit  *int  `hcl:"xrequestid_limit"`
+	ProxyProtocl     *bool `hcl:"proxy_protocol"`
+
+	Hostname          *string   `hcl:"hostname"`
+	TLSCertificate    *string   `hcl:"tls_certificate"`
+	TLSCertificateKey *string   `hcl:"tls_certificate_key"`
+	TLSProtocols      *[]string `hcl:"tls_protocols"`
+	TLSCiphers        *[]string `hcl:"tls_ciphers"`
+
+	RawHooks hcl.Body `hcl:",remain"` // See https://hcl.readthedocs.io/en/latest/go_decoding_gohcl.html#partial-decoding
 
 	Hooks []Hook
 }
@@ -36,8 +54,9 @@ type Hook struct {
 }
 
 type Request struct {
-	IncomingPayloadContentType *string   `hcl:"content_type"`
+	IncomingPayloadContentType *string   `hcl:"force_content_type"`
 	JSONStringParameters       *[]string `hcl:"json_parameters"`
+	HTTPMethods                *[]string `hcl:"http_methods"`
 }
 
 type PreExecConfig struct {
@@ -48,6 +67,7 @@ type PreExecConfig struct {
 
 type Task struct {
 	ExecuteCommand           []string           `hcl:"cmd"`
+	Stdin                    *string            `hcl:"stdin"`
 	CommandWorkingDirectory  *string            `hcl:"workdir"`
 	PassEnvironmentToCommand *map[string]string `hcl:"env_vars"`
 	PassFile                 *PassFile          `hcl:"pass_file,block"`
@@ -79,7 +99,7 @@ type PostExecConfig struct {
 type Response struct {
 	ResponseSuccess     *ResponseSuccess     `hcl:"success,block"`
 	ResponseError       *ResponseError       `hcl:"error,block"`
-	ResponseUnsatisfied *ResponseUnsatisfied `hcl:"unsatisfied_constraints,block"`
+	ResponseUnsatisfied *ResponseUnsatisfied `hcl:"unsatisfied,block"`
 }
 
 type ResponseError struct {
@@ -103,7 +123,7 @@ type ResponseUnsatisfied struct {
 	Headers     *map[string]string `hcl:"headers"`
 }
 
-func (s Server) Dump() {
+func (s Service) Dump() {
 	fmt.Println("Server:")
 	if s.IP != nil {
 		fmt.Println("  IP: ", *s.IP)
@@ -111,8 +131,10 @@ func (s Server) Dump() {
 	if s.Port != nil {
 		fmt.Println("  Port: ", *s.Port)
 	}
-	if s.Secure != nil {
-		fmt.Println("  Secure: ", *s.Secure)
+	fmt.Println("  Secure: ", s.Secure)
+	fmt.Println("  NoPanic: ", s.NoPanic)
+	if s.LogFile != nil {
+		fmt.Println("  LogFile: ", s.LogFile)
 	}
 
 	for _, h := range s.Hooks {
