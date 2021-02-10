@@ -6,10 +6,6 @@ import (
 	"github.com/hashicorp/hcl/v2"
 )
 
-type Config struct {
-	Services []Service `hcl:"service,block"`
-}
-
 type Service struct {
 	Debug       *bool     `hcl:"debug"`
 	Verbose     *bool     `hcl:"verbose"`

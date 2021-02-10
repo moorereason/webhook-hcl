@@ -44,14 +44,14 @@ func main() {
 
 	ct = time.Now()
 	var hb config.HooksConfig
-	diags := gohcl.DecodeBody(conf[0].RawHooks, ctx.EvalContext, &hb)
+	diags := gohcl.DecodeBody(conf.RawHooks, ctx.EvalContext, &hb)
 	if diags.HasErrors() {
 		log.Fatal(diags)
 	}
-	conf[0].Hooks = hb.Hooks
+	conf.Hooks = hb.Hooks
 	fmt.Println("%% Initialize Hooks\n%% TIME", time.Since(ct))
 	// fmt.Printf("2 hooksConfig: %#v\n", conf)
-	// conf[0].Dump()
+	// conf.Dump()
 
 	// Setup mux handler for hook.ID
 
@@ -109,19 +109,19 @@ func main() {
 
 	ct = time.Now()
 	var pre config.PreExecConfig
-	diags = gohcl.DecodeBody(conf[0].Hooks[0].PreExecConfig, ctx.EvalContext, &pre)
+	diags = gohcl.DecodeBody(conf.Hooks[0].PreExecConfig, ctx.EvalContext, &pre)
 	if diags.HasErrors() {
 		log.Fatal(diags)
 	}
-	conf[0].Hooks[0].Constraints = pre.Constraints
-	conf[0].Hooks[0].Task = pre.Task
+	conf.Hooks[0].Constraints = pre.Constraints
+	conf.Hooks[0].Task = pre.Task
 	fmt.Println("%% Evaluate Constraints\n%% TIME", time.Since(ct))
 	// fmt.Printf("3 hookConfig: %#v\n", conf)
-	conf[0].Dump()
+	conf.Dump()
 
 	satisfied := true
-	if conf[0].Hooks[0].Constraints != nil {
-		for _, v := range *conf[0].Hooks[0].Constraints {
+	if conf.Hooks[0].Constraints != nil {
+		for _, v := range *conf.Hooks[0].Constraints {
 			if v == false {
 				satisfied = false
 			}
@@ -155,35 +155,35 @@ func main() {
 	if diags.HasErrors() {
 		log.Fatal(diags)
 	}
-	conf[0].Hooks[0].Response = post.Response
+	conf.Hooks[0].Response = post.Response
 	fmt.Println("%% Build Response\n%% TIME", time.Since(ct))
 	// fmt.Printf("4 hookConfig: %#v\n", conf)
-	// conf[0].Dump()
+	// conf.Dump()
 
 	fmt.Println("%% TOTAL TIME", time.Since(t0))
 	fmt.Println("%% TOTAL TIME LESS LOAD CONFIG", time.Since(t1))
 }
 
-func loadConfigFile(path string) ([]config.Service, error) {
+func loadConfigFile(path string) (config.Service, error) {
 	_, err := os.Stat(path)
 	if err != nil {
-		return nil, err
+		return config.Service{}, err
 	}
 
 	p := hclparse.NewParser()
 
 	f, diags := p.ParseHCLFile(path)
 	if diags.HasErrors() {
-		return nil, diags
+		return config.Service{}, diags
 	}
 
 	ctx := config.NewContext()
 
-	var c config.Config
-	diags = gohcl.DecodeBody(f.Body, ctx.EvalContext, &c)
+	var svc config.Service
+	diags = gohcl.DecodeBody(f.Body, ctx.EvalContext, &svc)
 	if diags.HasErrors() {
-		return nil, diags
+		return config.Service{}, diags
 	}
 
-	return c.Services, nil
+	return svc, nil
 }
