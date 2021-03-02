@@ -3,26 +3,21 @@ This page is still work in progress. Feel free to contribute!
 
 ## Incoming Github webhook
 ```hcl
-server {
-  hook "webhook" {
-    constraints {
-      all {
-        expressions = [
-          "${"refs/heads/master" == payload("ref")}",
-          "${sha256(payload, "mysecret") == header("X-Signature")}",
-        ]
-      }
-    }
-    task {
-      workdir = "/home/adnan/go"
+hook "webhook" {
+  constraints = [
+    eq("refs/heads/master", payload("ref")),
+    eq(sha256(payload, "mysecret"), header("X-Hub-Signature")),
+  ]
 
-      cmd = [
-        "/home/adnon/redeploy-go-webhook.sh",
-        "${payload("head_commit.id")}",
-        "${payload("pusher.name")}",
-        "${payload("pusher.email")}",
-      ]
-    }
+  task {
+    workdir = "/home/adnan/go"
+
+    cmd = [
+      "/home/adnon/redeploy-go-webhook.sh",
+      "${payload("head_commit.id")}",
+      "${payload("pusher.name")}",
+      "${payload("pusher.email")}",
+    ]
   }
 }
 ```
@@ -32,23 +27,18 @@ server {
 Bitbucket does not pass any secrets back to the webhook.  [Per their documentation](https://confluence.atlassian.com/bitbucket/manage-webhooks-735643732.html#Managewebhooks-trigger_webhookTriggeringwebhooks), in order to verify that the webhook came from Bitbucket you must whitelist the IP range `104.192.143.0/24`:
 
 ```hcl
-server {
-  hook "webhook" {
-    constraints {
-      all {
-        expressions = [
-          "${request.RemoteAddr.WithinCIDR("104.192.143.0/24")}",
-        ]
-      }
-    }
-    task {
-      workdir = "/home/adnan/go"
+hook "webhook" {
+  constraints = [
+    cidr("104.192.143.0/24", request.remote_ip),
+  ]
 
-      cmd = [
-        "/home/adnon/redeploy-go-webhook.sh",
-        "${payload("actor.username")}",
-      ]
-    }
+  task {
+    workdir = "/home/adnan/go"
+
+    cmd = [
+      "/home/adnon/redeploy-go-webhook.sh",
+      "${payload("actor.username")}",
+    ]
   }
 }
 ```
@@ -60,23 +50,18 @@ Refer to this URL for example request body content: [gitlab-ce/integrations/webh
 Values in the request body can be accessed in the command or to the match rule by referencing 'payload' as the source:
 
 ```hcl
-server {
-  hook "redeploy-webhook" {
-    constraints {
-      all {
-        expressions = [
-          "${header("X-Gitlab-Token") == "<YOUR-GENERATED-TOKEN>"}",
-        ]
-      }
-    }
-    task {
-      workdir = "/home/adnan/go"
+hook "redeploy-webhook" {
+  constraints = [
+    eq(header("X-Gitlab-Token"), "<YOUR-GENERATED-TOKEN>"),
+  ]
 
-      cmd = [
-        "/home/adnon/redeploy-go-webhook.sh",
-        "${payload("user_name")}",
-      ]
-    }
+  task {
+    workdir = "/home/adnan/go"
+
+    cmd = [
+      "/home/adnon/redeploy-go-webhook.sh",
+      "${payload("user_name")}",
+    ]
   }
 }
 ```
@@ -84,26 +69,21 @@ server {
 ## Incoming Gogs webhook
 
 ```hcl
-server {
-  hook "webhook" {
-    constraints {
-      all {
-        expressions = [
-          "${"refs/heads/master" == payload("ref")}",
-          "${sha256(payload, "mysecret") == header("X-Gogs-Signature")}",
-        ]
-      }
-    }
-    task {
-      workdir = "/home/adnan/go"
+hook "webhook" {
+  constraints = [
+    eq("refs/heads/master", payload("ref")),
+    eq(sha256(payload, "mysecret"), header("X-Gogs-Signature")),
+  ]
 
-      cmd = [
-        "/home/adnon/redeploy-go-webhook.sh",
-        "${payload("head_commit.id")}",
-        "${payload("pusher.name")}",
-        "${payload("pusher.email")}",
-      ]
-    }
+  task {
+    workdir = "/home/adnan/go"
+
+    cmd = [
+      "/home/adnon/redeploy-go-webhook.sh",
+      "${payload("head_commit.id")}",
+      "${payload("pusher.name")}",
+      "${payload("pusher.email")}",
+    ]
   }
 }
 ```
@@ -111,26 +91,21 @@ server {
 ## Incoming Gitea webhook
 
 ```hcl
-server {
-  hook "webhook" {
-    constraints {
-      all {
-        expressions = [
-          "${"refs/heads/master" == payload("ref")}",
-          "${"mysecret" == payload("secret")}",
-        ]
-      }
-    }
-    task {
-      workdir = "/home/adnan/go"
+hook "webhook" {
+  constraints = [
+    eq("refs/heads/master", payload("ref")),
+    eq("mysecret", payload("secret")),
+  ]
 
-      cmd = [
-        "/home/adnon/redeploy-go-webhook.sh",
-        "${payload("head_commit.id")}",
-        "${payload("pusher.name")}",
-        "${payload("pusher.email")}",
-      ]
-    }
+  task {
+    workdir = "/home/adnan/go"
+
+    cmd = [
+      "/home/adnon/redeploy-go-webhook.sh",
+      "${payload("head_commit.id")}",
+      "${payload("pusher.name")}",
+      "${payload("pusher.email")}",
+    ]
   }
 }
 ```
@@ -138,27 +113,23 @@ server {
 ## Slack slash command
 
 ```hcl
-server {
-  hook "redeploy-webhook" {
-    constraints {
-      all {
-        expressions = [
-          "${payload("token") == "<YOUR-GENERATED-TOKEN>"}",
-        ]
-      }
-    }
-    task {
-      workdir = "/home/adnan/go"
+hook "redeploy-webhook" {
+  constraints = [
+    eq(payload("token"), "<YOUR-GENERATED-TOKEN>"),
+  ]
 
-      cmd = [
-        "/home/adnon/redeploy-go-webhook.sh",
-        "${payload("user_name")}",
-      ]
-    }
-    response {
-      success {
-        body = "Executing redeploy script"
-      }
+  task {
+    workdir = "/home/adnan/go"
+
+    cmd = [
+      "/home/adnon/redeploy-go-webhook.sh",
+      "${payload("user_name")}",
+    ]
+  }
+
+  response {
+    success {
+      body = "Executing redeploy script"
     }
   }
 }
@@ -172,22 +143,18 @@ __Not recommended in production due to low security__
 `example.com:9000/hooks/simple-one?token=42` - will work
 
 ```hcl
-server {
-  hook "simple-one" {
-    constraints {
-      all {
-        expressions = [
-          "${parameter("token") == "42"}",
-        ]
-      }
-    }
-    task {
-      cmd = ["/path/to/command.sh"]
-    }
-    response {
-      success {
-        body = "Executing simple webhook..."
-      }
+hook "simple-one" {
+  constraints = [
+    eq(url("token"), "42"),
+  ]
+
+  task {
+    cmd = ["/path/to/command.sh"]
+  }
+
+  response {
+    success {
+      body = "Executing simple webhook..."
     }
   }
 }
@@ -202,24 +169,23 @@ server {
 ## Webhook configuration
 
 ```hcl
-server {
-  hook "test-file-webhook" {
-    task {
-      workdir = "/tmp"
-      cmd = ["/bin/ls"]
+hook "test-file-webhook" {
+  task {
+    workdir = "/tmp"
+    cmd = ["/bin/ls"]
 
-      pass_file {
-        source = "payload"
-        name = "binary"
-        envname = "ENV_VARIABLE" // to use $ENV_VARIABLE in execute-command
-                                 // if not defined, $HOOK_BINARY will be provided
-        base64decode = true
-      }
+    pass_file {
+      source = "payload"
+      name = "binary"
+      envname = "ENV_VARIABLE" // to use $ENV_VARIABLE in execute-command
+                                // if not defined, $HOOK_BINARY will be provided
+      base64decode = true
     }
-    response {
-      success {
-        body = "${result.CombinedOutput}"
-      }
+  }
+
+  response {
+    success {
+      body = "${result.CombinedOutput}"
     }
   }
 }
@@ -257,30 +223,26 @@ Refer to this URL for information on how to setup the webhook call on the Scalr 
 In order to leverage the Signing Key for addtional authentication/security you must configure the trigger rule with a match type of "scalr-signature".
 
 ```hcl
-server {
-  hook "redeploy-webhook" {
-    constraints {
-      all {
-        expressions = [
-          "${since(header("Date")) <= duration("300s")}",
-          "${sha1(payload, "Scalr-provided signing key") == header("X-Signature")}",
-        ]
-      }
-    }
-    task {
-      workdir = "/home/adnan/go"
+hook "redeploy-webhook" {
+  constraints = [
+    le(since(header("Date")), duration("5m")),
+    eq(sha256(payload, "secret"), header("X-Signature"))),
+  ]
 
-      cmd = ["/home/adnon/redeploy-go-webhook.sh"]
+  task {
+    workdir = "/home/adnan/go"
 
-      env_vars = {
-        EVENT_NAME = "${payload("eventName")}"
-        SERVER_HOSTNAME = "${payload("data.SCALR_SERVER_HOSTNAME")}"
-      }
+    cmd = ["/home/adnon/redeploy-go-webhook.sh"]
+
+    env_vars = {
+      EVENT_NAME = "${payload("eventName")}"
+      SERVER_HOSTNAME = "${payload("data.SCALR_SERVER_HOSTNAME")}"
     }
-    response {
-      success {
-        body = "${result.CombinedOutput}"
-      }
+  }
+
+  response {
+    success {
+      body = "${result.CombinedOutput}"
     }
   }
 }
@@ -290,23 +252,19 @@ server {
 Travis sends webhooks as `payload=<JSON_STRING>`, so the payload needs to be parsed as JSON. Here is an example to run on successful builds of the master branch.
 
 ```hcl
-server {
-  hook "deploy" {
-    constraints {
-      all {
-        expressions = [
-          "${payload("payload.state") == "passed"}",
-          "${payload("payload.branch") == "master"}",
-        ]
-      }
-    }
-    request {
-      json_parameters = ["payload"]
-    }
-    task {
-      workdir = "/root/my-server"
-      cmd = ["/root/my-server/deployment.sh"]
-    }
+hook "deploy" {
+  constraints = [
+    eq(payload("state"), "passed"),
+    eq(payload("branch"), "master"),
+  ]
+
+  request {
+    json_parameters = ["payload"]
+  }
+
+  task {
+    workdir = "/root/my-server"
+    cmd = ["/root/my-server/deployment.sh"]
   }
 }
 ```

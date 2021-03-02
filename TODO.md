@@ -3,6 +3,7 @@
 - [ ] Fuller example with webserver and mux
 - [ ] How do we step through the contraints to show which rule failed?
 - [ ] Reloading config on signal
+- [ ] Make eq constant time
 
 
 ## Configuration File Feature Parity with webhook v1
@@ -69,42 +70,57 @@ Most assume a `service` prefix:
 - [x] Match payload-hmac-sha256 = eq(sha256(payload, "secret"), header("X-Signature"))
 - [x] Match payload-hmac-sha512 = eq(sha512(payload, "secret"), header("X-Signature"))
 - [x] Match ip-whitelist = cidr("10/8", "10.0.0.1")
-- [x] Match scalr-signature = and(
-        le(since(header("Date")), duration("5m")),
-        eq(sha256(payload, "secret"), header("X-Signature")),
-      )
+- [x] Match scalr-signature = and(le(since(header("Date")), duration("5m")), eq(sha256(payload, "secret"), header("X-Signature")))
+
+
+### Sources
+
+- [x] header = header("X-Foo")
+- [ ] url = url("foo")
+- [ ] query = query("foo")
+- [x] payload = payload("foo.bar")
+- [ ] request = request.method, request.remote_addr
+- [x] string = n/a
+- [ ] entire-payload = payloadBytes or string(payloadBytes)
+- [ ] entire-query = queryBytes or string(queryBytes)
+- [ ] entire-headers = headersBytes or string(headersBytes)
+- [ ] 
+
 
 ## Enhancement Requests
 
-- [x] #505 = X-forwarded-for in whitelist
+- [x] #505 X-forwarded-for in whitelist =
       Use header() and cidr()
-- [x] #406 = string formatting of cmd arguments
+- [x] #406 string formatting of cmd arguments =
       Add format() with printf libc syntax
-- [x] #336 = concat params in cmd
+- [x] #336 concat params in cmd =
       Add concat()
-- [x] #442 = dynamic URL paths
+- [x] #442 dynamic URL paths =
       Can use {variable} substitution in the hook ID
-- [x] #358 = pass temp file name to cmd
+- [x] #358 pass temp file name to cmd =
       Should be trivial for config to support it
-- [x] #349 = response-message-failed
+- [x] #349 response-message-failed =
       See hook.response sub-blocks
-- [x] #267 = time-based match rule
+- [x] #267 time-based match rule =
       Use since() and duration()
-- [x] #263 = use cmd exit code as response code
+- [x] #263 use cmd exit code as response code =
       Use result.exit_code
-- [x] #152 = PROXY protocol support
+- [x] #152 PROXY protocol support =
       Add service.proxy_protocol on the config side
-- [x] #148 = allow limiting hook concurrency
+- [x] #148 allow limiting hook concurrency =
       Add service[.hook].max_concurrency on the config side
-- [x] #190 = pass stdin to cmd
+- [x] #190 pass stdin to cmd =
       Add hook.stdin = payload
-- [x] #468 = read value from file
+- [x] #468 read value from file =
       Add readfile() function; security implications?
+- [x] #512 MS Teams HMAC header =
+      eq(concat("HMAC ", sha256(payload, "secret")), header("Authorization")),
 
-- [ ] #504 = Reference to any array element with match
+- [ ] #504 Reference to any array element with match =
       Have payload("foo.*.bar") return an array?
       May need a contains for collections (stdlib)
         Can we have a cty func that handles both strings and collections?
 
-- [ ] #326 = Support setting flags from config
+- [ ] #326 Support setting flags from config =
       Surely we can figure this out; see hashicorp projects
+
