@@ -3,7 +3,7 @@
 - [ ] Fuller example with webserver and mux
 - [ ] How do we step through the contraints to show which rule failed?
 - [ ] Reloading config on signal
-- [ ] Make eq constant time
+- [x] Make eq constant time
 
 
 ## Configuration File Feature Parity with webhook v1
@@ -76,15 +76,13 @@ Most assume a `service` prefix:
 ### Sources
 
 - [x] header = header("X-Foo")
-- [ ] url = url("foo")
-- [ ] query = query("foo")
+- [x] url = url("foo")
 - [x] payload = payload("foo.bar")
-- [ ] request = request.method, request.remote_addr
+- [x] request = request.method, request.remote_addr, r
 - [x] string = n/a
 - [ ] entire-payload = payloadBytes or string(payloadBytes)
 - [ ] entire-query = queryBytes or string(queryBytes)
 - [ ] entire-headers = headersBytes or string(headersBytes)
-- [ ] 
 
 
 ## Enhancement Requests

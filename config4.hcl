@@ -28,9 +28,13 @@ http_methods = ["POST"]
 
 hook "PREFIX/webhook/{scan_id}" {
   constraints = [ // trigger-rule
-    eq(getenv("FOO"), "BAR"),
+    or(
+      eq(getenv("FOO"), ""),
+      eq(getenv("FOO"), "BAR"),
+    ),
     eq(upper(request.method), "POST"),
-    // le(since(header("Date")), duration("10m")),
+    eq(lower(request.method), lower("POST")),
+    le(since(header("Date")), duration("10m")),
     match("^refs/[^/]+/master", payload("ref")),
     eq(sha256(payload, "secret"), header("X-Signature")),
     any(
@@ -43,14 +47,24 @@ hook "PREFIX/webhook/{scan_id}" {
         debug(concat("sha256=", sha256(payload, "secret"))),
       ),
     ),
+    eq(url("param1"), "foo"),
     not(match("HTTP.2", request.proto)),
-    cidr("1.2.3.0/24", request.remote_ip),
-    cidr("1.2.3.0/24", header(format("%s", "X-Forwarded-for"))),
+    and(
+      cidr("1.2.3.0/24", request.remote_ip),
+      cidr("1.2.3.0/24", header(format("%s%s", "X-Forwarded-for", ""))),
+    ),
     eq(find("foo.?", "seafood fool"), "food"),
 
-    // eq(readfile("secrets_file"), "huh"), // XXX
-    debug(base64encode("foobar")),
-    // eq(len(findAll("foo.?", "seafood fool")), 2),
+    eq(concat("HMAC ", sha256(payload, "secret")), header("Authorization")), // #512 MS Teams
+
+    eq(readfile("secrets_file"), "foobar\n"), // XXX
+    eq("foobar", base64decode("Zm9vYmFy")),
+    eq(base64encode("foobar"), "Zm9vYmFy"),
+
+    lt(len("foo"), 3),
+    ne(len("foo"), 3),
+
+    eq("food", find("foo.?", "seafood fool")),
     // eq(findAll("foo.?", "seafood fool"), ["food", "fool"]),
   ]
 
@@ -64,18 +78,18 @@ hook "PREFIX/webhook/{scan_id}" {
 
     // execute-command & pass-arguments-to-command
     cmd = [
-      // "/issue217/vol-key-${payload("newVolume") > payload("previousVolume") ? "up" : "down"}.sh",
+      "/issue217/vol-key-${ge(payload("newVolume"), payload("previousVolume")) ? "up" : "down"}.sh",
       "/home/adnon/redeploy-go-webhook.sh",
-      "${payload("a")}",
-      "${payload("head_commit.id")}",
-      "${payload("pusher.name")}",
-      " ${payload("pusher.email")}",
+      payload("a"),
+      payload("head_commit.id"),
+      payload("pusher.name"),
+      payload("pusher.email"),
     ]
 
     workdir = "/home/adnan/go" // command-working-directory
 
     env_vars = { // pass-environment-to-command
-      EVENT_NAME = "${payload("a")}"
+      EVENT_NAME = payload("a")
     }
 
     // pass-file-to-command - FIXME not sure how to define this yet...
@@ -109,21 +123,21 @@ hook "PREFIX/webhook/{scan_id}" {
     success {
       status_code = 222
       headers = { // response-headers
-          name = "${result.pid}",
+          name = result.pid,
           Strict-Transport-Security = "max-age=63072000; includeSubDomains",
       }
       content_type = "application/json"
-      body = "${result.CombinedOutput}" // include-command-output-in-response
+      body = result.CombinedOutput // include-command-output-in-response
     }
 
     error {
-      status_code = "${result.exit_code}"
+      status_code = result.exit_code
       headers = { // response-headers
-          name = "${result.pid}",
+          name = result.pid,
           Strict-Transport-Security = "max-age=63072000; includeSubDomains",
       }
       content_type = "application/json"
-      body = "${result.CombinedOutput}" // include-command-output-in-response
+      body = result.CombinedOutput // include-command-output-in-response
     }
   }
 }
