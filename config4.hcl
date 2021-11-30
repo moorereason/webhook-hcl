@@ -39,11 +39,11 @@ hook "PREFIX/webhook/{scan_id}" {
     eq(sha256(payload, "secret"), header("X-Signature")),
     any(
       all(
-        contains(header("X-Coral-Signature"), concat("sha1=", sha1(payload, "secret"))),
+        scontains(header("X-Coral-Signature"), concat("sha1=", sha1(payload, "secret"))),
         debug(concat("sha1=", sha1(payload, "secret"))),
       ),
       all(
-        contains(header("X-Coral-Signature"), concat("sha256=", sha256(payload, "secret"))),
+        scontains(header("X-Coral-Signature"), concat("sha256=", sha256(payload, "secret"))),
         debug(concat("sha256=", sha256(payload, "secret"))),
       ),
     ),
@@ -66,6 +66,8 @@ hook "PREFIX/webhook/{scan_id}" {
 
     eq("food", find("foo.?", "seafood fool")),
     // eq(findAll("foo.?", "seafood fool"), ["food", "fool"]),
+
+    contains([1, 2, 3], 3),
   ]
 
   request {
@@ -78,7 +80,7 @@ hook "PREFIX/webhook/{scan_id}" {
 
     // execute-command & pass-arguments-to-command
     cmd = [
-      "/issue217/vol-key-${ge(payload("newVolume"), payload("previousVolume")) ? "up" : "down"}.sh",
+      "/issue217/vol-key-${gt(payload("newVolume"), payload("previousVolume")) ? "up" : "down"}.sh",
       "/home/adnon/redeploy-go-webhook.sh",
       payload("a"),
       payload("head_commit.id"),

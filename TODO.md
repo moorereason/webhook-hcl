@@ -78,7 +78,7 @@ Most assume a `service` prefix:
 - [x] header = header("X-Foo")
 - [x] url = url("foo")
 - [x] payload = payload("foo.bar")
-- [x] request = request.method, request.remote_addr, r
+- [x] request = request.method, .remote_ip, host, proto
 - [x] string = n/a
 - [ ] entire-payload = payloadBytes or string(payloadBytes)
 - [ ] entire-query = queryBytes or string(queryBytes)
@@ -93,7 +93,7 @@ Most assume a `service` prefix:
       Add format() with printf libc syntax
 - [x] #336 concat params in cmd =
       Add concat()
-- [x] #442 dynamic URL paths =
+- [x] #422 dynamic URL paths =
       Can use {variable} substitution in the hook ID
 - [x] #358 pass temp file name to cmd =
       Should be trivial for config to support it

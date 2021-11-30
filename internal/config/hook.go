@@ -127,10 +127,10 @@ func (s Service) Dump() {
 	if s.Port != nil {
 		fmt.Println("  Port: ", *s.Port)
 	}
-	fmt.Println("  Secure: ", s.Secure)
-	fmt.Println("  NoPanic: ", s.NoPanic)
+	fmt.Println("  Secure: ", *s.Secure)
+	fmt.Println("  NoPanic: ", *s.NoPanic)
 	if s.LogFile != nil {
-		fmt.Println("  LogFile: ", s.LogFile)
+		fmt.Println("  LogFile: ", *s.LogFile)
 	}
 
 	for _, h := range s.Hooks {

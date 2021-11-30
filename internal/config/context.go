@@ -46,8 +46,7 @@ func NewContext() *Context {
 
 		"header":  c.HeaderFunc(),
 		"payload": c.PayloadFunc(),
-		"url":     c.ParamFunc(),
-		// "request":  c.RequestFunc(),
+		"url":     c.URLFunc(),
 
 		"all":          c.allFunc(),
 		"and":          c.andFunc(),
@@ -56,12 +55,12 @@ func NewContext() *Context {
 		"base64encode": c.base64encodeFunc(),
 		"cidr":         c.cidrFunc(),
 		"concat":       c.concatFunc(),
-		"contains":     c.containsFunc(),
+		"contains":     stdlib.ContainsFunc,
+		"scontains":    c.scontainsFunc(),
 		"debug":        c.debugFunc(),
 		"duration":     c.durationFunc(),
 		"eq":           c.eqFunc(),
 		"find":         c.findFunc(),
-		"float":        c.floatFunc(),
 		"format":       c.formatFunc(),
 		"ge":           c.geFunc(),
 		"getenv":       c.getenvFunc(),
@@ -110,7 +109,7 @@ func (c *Context) PayloadFunc() function.Function {
 				return cty.StringVal(s), nil
 			}
 			// TODO: should we return an error here?
-			return cty.StringVal(""), nil // fmt.Errorf("failed to find payload value: %s", k)
+			return cty.StringVal(""), fmt.Errorf("failed to find payload value: %s", k)
 		},
 	})
 }
@@ -138,7 +137,7 @@ func (c *Context) HeaderFunc() function.Function {
 	})
 }
 
-func (c *Context) ParamFunc() function.Function {
+func (c *Context) URLFunc() function.Function {
 	return function.New(&function.Spec{
 		Params: []function.Parameter{
 			{
@@ -152,10 +151,10 @@ func (c *Context) ParamFunc() function.Function {
 			kk := strings.ToLower(k)
 			if v, ok := c.Params[kk]; ok {
 				s := fmt.Sprintf("%v", v)
-				c.debugf("param(%q) => %q", k, s)
+				c.debugf("url(%q) => %q", k, s)
 				return cty.StringVal(v), nil
 			}
-			c.debugf("param(%q) => %q", k, "")
+			c.debugf("url(%q) => %q", k, "")
 			return cty.StringVal(""), nil
 		},
 	})
@@ -307,7 +306,7 @@ func (c *Context) concatFunc() function.Function {
 	})
 }
 
-func (c *Context) containsFunc() function.Function {
+func (c *Context) scontainsFunc() function.Function {
 	return function.New(&function.Spec{
 		Params: []function.Parameter{
 			{
@@ -325,7 +324,7 @@ func (c *Context) containsFunc() function.Function {
 			substr := args[1].AsString()
 			ret := strings.Contains(s, substr)
 
-			c.debugf("contains(%q, %q) => %v", s, substr, ret)
+			c.debugf("scontains(%q, %q) => %v", s, substr, ret)
 			return cty.BoolVal(ret), nil
 		},
 	})
@@ -955,29 +954,6 @@ func (c *Context) neFunc() function.Function {
 			ret = args[0].Equals(args[1]).Not()
 			// TODO: print params?
 			c.debugf("ne(...) => %t", ret.True())
-			return ret, nil
-		},
-	})
-}
-
-// TODO: do we need this?
-func (c *Context) floatFunc() function.Function {
-	return function.New(&function.Spec{
-		Params: []function.Parameter{
-			{
-				Name: "s",
-				Type: cty.String,
-			},
-		},
-		Type: function.StaticReturnType(cty.Number),
-		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
-			ret, err := convert.Convert(args[0], cty.Number)
-			if err != nil {
-				return ret, err
-			}
-
-			// TODO: print params?
-			c.debugf("float(...) => %d", ret.AsBigFloat())
 			return ret, nil
 		},
 	})
