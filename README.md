@@ -12,3 +12,8 @@ This repository contains a proof-of-concept playground for using HCL in
 ## Progress
 
 See [TODO.md](TODO.md).
+
+## Examples
+
+- **[config-github.hcl](config-github.hcl)**: simply Github webhook
+- **[config4.hcl](config4.hcl)**: everything imaginable in one file
