@@ -15,9 +15,9 @@ hook "PREFIX/webhook" {
   task {
     cmd = [
       "/home/adnon/redeploy-go-webhook.sh",
-      "${payload("head_commit.id")}",
-      "${payload("pusher.name")}",
-      " ${payload("pusher.email")}",
+      payload("head_commit.id"),
+      payload("pusher.name"),
+      payload("pusher.email"),
     ]
 
     workdir = "/home/adnan/go" // command-working-directory
