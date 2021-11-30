@@ -159,7 +159,7 @@ func main() {
 	satisfied := true
 	if conf.Hooks[0].Constraints != nil {
 		for _, v := range *conf.Hooks[0].Constraints {
-			if v == false {
+			if !v {
 				satisfied = false
 			}
 		}
